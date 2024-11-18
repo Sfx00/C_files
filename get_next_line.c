@@ -35,7 +35,7 @@ char	*read_file(int fd, char *buffer, char **remainder)
 			return (cleaner(remainder, NULL));
 		tmp = ft_strjoin(*remainder, buffer);
 		if (!tmp)
-			return (cleaner(remainder, buffer));
+			return (cleaner(remainder, NULL));
 		cleaner(remainder, NULL);
 		*remainder = tmp;
 		if (ft_strchr(*remainder, '\n'))
