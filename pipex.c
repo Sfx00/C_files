@@ -105,11 +105,11 @@ void second_child(_struct *card,char **av,char **env)
     card->outfile = open(av[4], O_CREAT | O_WRONLY | O_TRUNC, 0777);
     if(card->outfile == -1)
         print_error("Faild to open output file");
-    if(dup2(card->outfile, STDOUT_FILENO) == -1)
+    if(dup2(card->outfile, 1) == -1)
         print_error("Faild to dup2 child2");
-    if(dup2(card->pipe[0], STDIN_FILENO) == -1)
+    if(dup2(card->pipe[0],0) == -1)
         print_error("Faild to dup2 child2");
-    close(card->pipe[0]);
+    close(card->infile);
     close(card->pipe[1]);
     cmd = ft_split(av[3],' ');
     if(!cmd)
@@ -134,12 +134,12 @@ void first_child(_struct *card,char **av,char **env)
     card->infile = open(av[1],O_RDONLY);
     if(card->infile == -1)
         print_error("Failed to open input file");
-    if(dup2(card->infile,STDIN_FILENO) == -1)
+    if(dup2(card->infile,0) == -1)
         print_error("Failed to dup2 in first child");
-    if(dup2(card->pipe[1],STDOUT_FILENO) == -1)
+    if(dup2(card->pipe[1],1) == -1)
         print_error("Faild to dup2 child1");
     close(card->pipe[0]);
-    close(card->pipe[1]);
+    close(card->outfile);
     cmd = ft_split(av[2],' ');
      if (!cmd)
         print_error("Failed to split command");
@@ -161,22 +161,20 @@ void pipex(_struct *card,char **av,char **env)
     int status;
     if(pipe(card->pipe) == -1)
         print_error("Failed to create pipe");
+
     card->pid1 = fork();
     if(card->pid1 < 0)
         print_error("faild to create a child");
+
     if(card->pid1 == 0)
-    {
         first_child(card,av,env);
-        exit(EXIT_SUCCESS);
-    }
+
     card->pid2 = fork();
     if(card->pid2 < 0)
         print_error("faild to create a child");
+
     if(card->pid2 == 0)
-    {
         second_child(card,av,env);
-        exit(EXIT_SUCCESS);
-    }
     
     close(card->pipe[0]);
     close(card->pipe[1]);
