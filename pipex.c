@@ -1,24 +1,4 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/wait.h>
-#include <time.h>
-#include <signal.h>
-#include <fcntl.h>
-#include "libft.h"
-
-typedef struct data
-{
-    int infile;
-    int outfile;
-    int pipe[2];
-    pid_t pid1;
-    pid_t pid2;
-    char **cmd1;
-    char **cmd2;
-
-}_struct;
-
+#include "pipex.h"
 
 void print_error(char *str)
 {
@@ -30,73 +10,6 @@ void print_error(char *str)
     write(2,"\n",1);
     exit(1);
 }
-
-char *check_path(char **full_path,char *cmd)
-{
-    int i;
-
-    i = 0;
-    while(full_path[i])
-    {
-        char *path;
-        char *tmp;
-
-        tmp = ft_strjoin(full_path[i],"/");
-        if(!tmp)
-            return(NULL);
-        path = ft_strjoin(tmp,cmd);
-        free(tmp);
-        if(!path)
-            return(NULL);
-        if(access(path,X_OK) == 0)
-            return (path);
-        free(path);
-        i++;
-    }
-    return(NULL);
-}
-
-char *get_path(char **env,char *cmd)
-{
-    int i;
-    char **full_path;
-    char *path;
-    i = 0;
-    while(env[i])
-    {
-        if(ft_strncmp(env[i],"PATH=",5) == 0)
-        {
-            full_path = ft_split(env[i] + 5 ,':');
-            if(!full_path)
-                return(NULL);
-            path = check_path(full_path,cmd);
-            if(!path)
-                return (NULL);
-            else
-                return (path);
-        }
-        i++;
-    }
-    return(NULL);
-}
-
-char *find_path(char *cmd,char **env)
-{
-    char *path;
-
-    if(ft_strchr(cmd,'/'))
-    {
-        if(access(cmd,X_OK) == 0)
-            return (cmd);
-        return(NULL);
-    }
-
-    path = get_path(env,cmd);
-    if(!path)
-        return (NULL);
-
-    return (path);
-}
 void second_child(_struct *card,char **av,char **env)
 {
     char **cmd;
@@ -106,9 +19,9 @@ void second_child(_struct *card,char **av,char **env)
     if(card->outfile == -1)
         print_error("Faild to open output file");
     if(dup2(card->outfile, 1) == -1)
-        print_error("Faild to dup2 child2");
+        print_error("Failed to duplicate file descriptor");
     if(dup2(card->pipe[0],0) == -1)
-        print_error("Faild to dup2 child2");
+        print_error("Failed to duplicate file descriptor");
     close(card->infile);
     close(card->pipe[1]);
     cmd = ft_split(av[3],' ');
@@ -135,9 +48,9 @@ void first_child(_struct *card,char **av,char **env)
     if(card->infile == -1)
         print_error("Failed to open input file");
     if(dup2(card->infile,0) == -1)
-        print_error("Failed to dup2 in first child");
+        print_error("Failed to duplicate file descriptor");
     if(dup2(card->pipe[1],1) == -1)
-        print_error("Faild to dup2 child1");
+        print_error("Failed to duplicate file descriptor");
     close(card->pipe[0]);
     close(card->outfile);
     cmd = ft_split(av[2],' ');
